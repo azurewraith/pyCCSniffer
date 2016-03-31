@@ -301,6 +301,10 @@ class CC2531EMK:
             time.sleep(0.1)
 
         self.set_channel(channel)
+        self.dcf_cnt = 1
+        self.dcf_file = open("sniffer.dcf", 'w')
+        self.dcf_file.write('#Format=4\n')
+        self.dcf_file.write('# SNA v3.0.0.0 SUS:20081212 ACT:709980\n')
 
     def __del__(self):
         if self.dev:
@@ -343,6 +347,11 @@ class CC2531EMK:
                         frame = bytesteam[5:]
 
                         if len(frame) == pktLen:
+                            #print timestamp, frame
+                            rtime = timestamp / 32.0 / 1000.0
+                            st = '%d %f %d %s 76 1 -64 15 1 0 1 32767\n' % (self.dcf_cnt, rtime, len(frame), ''.join(['%02x' % i for i in frame]))
+                            self.dcf_file.write(st)
+                            self.dcf_cnt = self.dcf_cnt + 1
                             self.callback(timestamp, frame)
                         else:
                             logger.warn("Received a frame with incorrect length, pkgLen:%d, len(frame):%d" %(pktLen, len(frame)))
@@ -577,5 +586,6 @@ if __name__ == '__main__':
         if snifferDev.isRunning():
             snifferDev.stop()
         dump_stats()
+        #self.dcf_file.close()
         sys.exit(0)
 
